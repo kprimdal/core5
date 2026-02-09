@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0a0a">
+<title>Core 5</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;0,9..40,700;1,9..40,300&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0a;
+  --surface: #141414;
+  --surface-2: #1e1e1e;
+  --border: #2a2a2a;
+  --text: #e8e8e8;
+  --text-dim: #888;
+  --accent: #ff6b35;
+  --accent-glow: rgba(255,107,53,0.15);
+  --green: #4ecb71;
+  --green-dim: rgba(78,203,113,0.15);
+  --rest-blue: #5b9cf5;
+  --rest-glow: rgba(91,156,245,0.15);
+  --radius: 16px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+body {
+  font-family:'DM Sans',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100dvh;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+
+.app { max-width:480px; margin:0 auto; padding:0 20px 100px; }
+
+/* Header */
+.header {
+  padding:24px 0 16px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.logo {
+  font-size:22px;
+  font-weight:700;
+  letter-spacing:-0.5px;
+}
+.logo span { color:var(--accent); }
+.round-badge {
+  font-family:'JetBrains Mono',monospace;
+  font-size:13px;
+  color:var(--text-dim);
+  background:var(--surface);
+  padding:6px 14px;
+  border-radius:20px;
+  border:1px solid var(--border);
+}
+
+/* Views */
+.view { display:none; }
+.view.active { display:block; }
+
+/* HOME VIEW */
+.hero {
+  text-align:center;
+  padding:40px 0 32px;
+}
+.hero h1 {
+  font-size:32px;
+  font-weight:700;
+  letter-spacing:-1px;
+  line-height:1.2;
+  margin-bottom:8px;
+}
+.hero p {
+  color:var(--text-dim);
+  font-size:15px;
+  line-height:1.5;
+}
+.stats-row {
+  display:flex;
+  gap:10px;
+  margin:24px 0;
+}
+.stat-card {
+  flex:1;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:16px 12px;
+  text-align:center;
+}
+.stat-card .num {
+  font-family:'JetBrains Mono',monospace;
+  font-size:28px;
+  font-weight:700;
+  color:var(--accent);
+}
+.stat-card .label {
+  font-size:11px;
+  color:var(--text-dim);
+  text-transform:uppercase;
+  letter-spacing:1px;
+  margin-top:4px;
+}
+
+.btn-start {
+  width:100%;
+  padding:18px;
+  border:none;
+  border-radius:var(--radius);
+  background:var(--accent);
+  color:#fff;
+  font-family:'DM Sans',sans-serif;
+  font-size:18px;
+  font-weight:700;
+  cursor:pointer;
+  transition:all .2s;
+  margin:8px 0 32px;
+  letter-spacing:-0.3px;
+}
+.btn-start:active { transform:scale(0.97); opacity:0.9; }
+
+/* Exercise list on home */
+.exercise-list-home { display:flex; flex-direction:column; gap:10px; }
+.ex-card-home {
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:16px 18px;
+  display:flex;
+  align-items:center;
+  gap:14px;
+  cursor:pointer;
+  transition:all .15s;
+}
+.ex-card-home:active { background:var(--surface-2); }
+.ex-num {
+  font-family:'JetBrains Mono',monospace;
+  font-size:14px;
+  font-weight:700;
+  color:var(--accent);
+  background:var(--accent-glow);
+  width:36px;
+  height:36px;
+  border-radius:10px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-shrink:0;
+}
+.ex-card-home .info { flex:1; }
+.ex-card-home .name { font-size:16px; font-weight:500; }
+.ex-card-home .meta { font-size:13px; color:var(--text-dim); margin-top:2px; }
+.ex-card-home .arrow { color:var(--text-dim); font-size:18px; }
+
+/* WORKOUT VIEW */
+.workout-header {
+  text-align:center;
+  padding:20px 0 8px;
+}
+.workout-round {
+  font-family:'JetBrains Mono',monospace;
+  font-size:13px;
+  color:var(--accent);
+  text-transform:uppercase;
+  letter-spacing:2px;
+}
+.workout-exercise-name {
+  font-size:28px;
+  font-weight:700;
+  letter-spacing:-0.5px;
+  margin-top:4px;
+}
+.workout-target {
+  color:var(--text-dim);
+  font-size:15px;
+  margin-top:4px;
+}
+
+/* Timer ring */
+.timer-container {
+  display:flex;
+  justify-content:center;
+  padding:28px 0;
+  position:relative;
+}
+.timer-ring {
+  width:220px;
+  height:220px;
+  position:relative;
+}
+.timer-ring svg {
+  width:100%;
+  height:100%;
+  transform:rotate(-90deg);
+}
+.timer-ring .track {
+  fill:none;
+  stroke:var(--surface-2);
+  stroke-width:6;
+}
+.timer-ring .progress {
+  fill:none;
+  stroke:var(--accent);
+  stroke-width:6;
+  stroke-linecap:round;
+  transition:stroke-dashoffset 0.3s ease;
+}
+.timer-ring.rest .progress { stroke:var(--rest-blue); }
+.timer-ring.done .progress { stroke:var(--green); }
+.timer-display {
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  text-align:center;
+}
+.timer-display .time {
+  font-family:'JetBrains Mono',monospace;
+  font-size:52px;
+  font-weight:700;
+  letter-spacing:-2px;
+}
+.timer-display .time-label {
+  font-size:12px;
+  color:var(--text-dim);
+  text-transform:uppercase;
+  letter-spacing:1.5px;
+  margin-top:2px;
+}
+.rep-display {
+  text-align:center;
+  padding:20px 0;
+}
+.rep-display .reps {
+  font-family:'JetBrains Mono',monospace;
+  font-size:64px;
+  font-weight:700;
+  color:var(--accent);
+  line-height:1;
+}
+.rep-display .reps-label {
+  font-size:14px;
+  color:var(--text-dim);
+  text-transform:uppercase;
+  letter-spacing:1.5px;
+  margin-top:8px;
+}
+
+/* Workout controls */
+.workout-controls {
+  display:flex;
+  gap:12px;
+  padding:8px 0 16px;
+}
+.btn-workout {
+  flex:1;
+  padding:16px;
+  border:none;
+  border-radius:var(--radius);
+  font-family:'DM Sans',sans-serif;
+  font-size:16px;
+  font-weight:700;
+  cursor:pointer;
+  transition:all .15s;
+}
+.btn-workout:active { transform:scale(0.97); }
+.btn-next {
+  background:var(--accent);
+  color:#fff;
+}
+.btn-pause {
+  background:var(--surface);
+  color:var(--text);
+  border:1px solid var(--border);
+}
+.btn-done-ex {
+  background:var(--green);
+  color:#000;
+}
+.btn-rest {
+  background:var(--rest-blue);
+  color:#fff;
+}
+
+/* Progress dots */
+.progress-bar {
+  display:flex;
+  gap:6px;
+  justify-content:center;
+  padding:16px 0;
+}
+.progress-dot {
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  background:var(--surface-2);
+  border:1px solid var(--border);
+  transition:all .3s;
+}
+.progress-dot.active {
+  background:var(--accent);
+  border-color:var(--accent);
+  box-shadow:0 0 8px var(--accent-glow);
+}
+.progress-dot.done {
+  background:var(--green);
+  border-color:var(--green);
+}
+
+/* Round indicators */
+.round-dots {
+  display:flex;
+  gap:8px;
+  justify-content:center;
+  padding:8px 0 16px;
+}
+.round-dot {
+  width:28px;
+  height:4px;
+  border-radius:2px;
+  background:var(--surface-2);
+  transition:all .3s;
+}
+.round-dot.active { background:var(--accent); }
+.round-dot.done { background:var(--green); }
+
+/* Form cue */
+.form-cue {
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:16px 18px;
+  margin:8px 0;
+}
+.form-cue .cue-title {
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:1.5px;
+  color:var(--accent);
+  margin-bottom:6px;
+}
+.form-cue p {
+  font-size:14px;
+  line-height:1.5;
+  color:var(--text-dim);
+}
+
+/* DETAIL VIEW */
+.detail-back {
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  color:var(--accent);
+  font-size:15px;
+  font-weight:500;
+  cursor:pointer;
+  padding:20px 0 12px;
+  background:none;
+  border:none;
+  font-family:'DM Sans',sans-serif;
+}
+.detail-title {
+  font-size:28px;
+  font-weight:700;
+  letter-spacing:-0.5px;
+  margin-bottom:4px;
+}
+.detail-subtitle {
+  color:var(--text-dim);
+  font-size:14px;
+  margin-bottom:20px;
+}
+.detail-section {
+  margin-bottom:20px;
+}
+.detail-section h3 {
+  font-size:12px;
+  text-transform:uppercase;
+  letter-spacing:1.5px;
+  color:var(--accent);
+  margin-bottom:10px;
+}
+.detail-section p, .detail-section li {
+  font-size:15px;
+  line-height:1.6;
+  color:var(--text-dim);
+}
+.detail-section ol {
+  padding-left:20px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.detail-section li::marker { color:var(--accent); }
+.muscles-grid {
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.muscle-tag {
+  background:var(--accent-glow);
+  color:var(--accent);
+  font-size:13px;
+  padding:6px 12px;
+  border-radius:8px;
+}
+.links-list { display:flex; flex-direction:column; gap:8px; }
+.link-item {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:14px 16px;
+  text-decoration:none;
+  color:var(--text);
+  font-size:14px;
+  transition:all .15s;
+}
+.link-item:active { background:var(--surface-2); }
+.link-item .link-source {
+  font-size:12px;
+  color:var(--text-dim);
+}
+.link-item .link-arrow { color:var(--text-dim); margin-left:auto; }
+
+/* COMPLETE VIEW */
+.complete-view {
+  text-align:center;
+  padding:60px 0;
+}
+.complete-check {
+  width:80px;
+  height:80px;
+  border-radius:50%;
+  background:var(--green-dim);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  margin:0 auto 24px;
+  font-size:40px;
+}
+.complete-view h1 {
+  font-size:32px;
+  font-weight:700;
+  letter-spacing:-1px;
+  margin-bottom:8px;
+}
+.complete-view p {
+  color:var(--text-dim);
+  font-size:15px;
+  line-height:1.5;
+}
+.complete-stats {
+  display:flex;
+  gap:10px;
+  margin:28px 0;
+}
+.btn-home {
+  width:100%;
+  padding:18px;
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  background:var(--surface);
+  color:var(--text);
+  font-family:'DM Sans',sans-serif;
+  font-size:16px;
+  font-weight:700;
+  cursor:pointer;
+}
+
+/* Rest overlay */
+.rest-overlay {
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(10,10,10,0.95);
+  z-index:100;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+}
+.rest-overlay.active { display:flex; }
+.rest-overlay .rest-label {
+  font-size:13px;
+  text-transform:uppercase;
+  letter-spacing:2px;
+  color:var(--rest-blue);
+  margin-bottom:8px;
+}
+.rest-overlay .rest-next {
+  font-size:16px;
+  color:var(--text-dim);
+  margin-top:16px;
+}
+.rest-overlay .rest-time {
+  font-family:'JetBrains Mono',monospace;
+  font-size:80px;
+  font-weight:700;
+  letter-spacing:-3px;
+}
+.btn-skip-rest {
+  margin-top:32px;
+  padding:14px 40px;
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  background:var(--surface);
+  color:var(--text);
+  font-family:'DM Sans',sans-serif;
+  font-size:16px;
+  font-weight:500;
+  cursor:pointer;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity:0; transform:translateY(8px); }
+  to { opacity:1; transform:translateY(0); }
+}
+.view.active { animation:fadeIn .3s ease; }
+
+@keyframes pulse {
+  0%,100% { transform:scale(1); }
+  50% { transform:scale(1.05); }
+}
+.timer-ring.rest .progress { animation:none; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- HOME VIEW -->
+  <div id="view-home" class="view active">
+    <div class="header">
+      <div class="logo">Core<span>5</span></div>
+      <div class="round-badge" id="home-sessions"></div>
+    </div>
+    <div class="hero">
+      <h1>Travel Core Routine</h1>
+      <p>5 exercises · 3 rounds · ~20 min<br>No equipment · No kneeling</p>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="num">5</div>
+        <div class="label">Exercises</div>
+      </div>
+      <div class="stat-card">
+        <div class="num">3</div>
+        <div class="label">Rounds</div>
+      </div>
+      <div class="stat-card">
+        <div class="num">20</div>
+        <div class="label">Minutes</div>
+      </div>
+    </div>
+    <button class="btn-start" onclick="startWorkout()">Start Workout</button>
+    <div class="exercise-list-home" id="exercise-list"></div>
+  </div>
+
+  <!-- WORKOUT VIEW -->
+  <div id="view-workout" class="view">
+    <div class="round-dots" id="round-dots"></div>
+    <div class="workout-header">
+      <div class="workout-round" id="w-round"></div>
+      <div class="workout-exercise-name" id="w-name"></div>
+      <div class="workout-target" id="w-target"></div>
+    </div>
+
+    <div id="timer-section" class="timer-container">
+      <div class="timer-ring" id="timer-ring">
+        <svg viewBox="0 0 220 220">
+          <circle class="track" cx="110" cy="110" r="100"/>
+          <circle class="progress" id="timer-progress" cx="110" cy="110" r="100"
+            stroke-dasharray="628.3" stroke-dashoffset="0"/>
+        </svg>
+        <div class="timer-display">
+          <div class="time" id="timer-time">0:30</div>
+          <div class="time-label" id="timer-label">hold</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="rep-section" class="rep-display" style="display:none;">
+      <div class="reps" id="w-reps">15</div>
+      <div class="reps-label" id="w-reps-label">reps</div>
+    </div>
+
+    <div class="form-cue" id="form-cue">
+      <div class="cue-title">Form cue</div>
+      <p id="cue-text"></p>
+    </div>
+
+    <div class="progress-bar" id="progress-dots"></div>
+
+    <div class="workout-controls" id="workout-controls">
+      <button class="btn-workout btn-pause" id="btn-pause" onclick="togglePause()">Pause</button>
+      <button class="btn-workout btn-done-ex" id="btn-next" onclick="nextExercise()">Done →</button>
+    </div>
+  </div>
+
+  <!-- REST OVERLAY -->
+  <div class="rest-overlay" id="rest-overlay">
+    <div class="rest-label">Rest</div>
+    <div class="rest-time" id="rest-time">30</div>
+    <div class="rest-next" id="rest-next">Next: Dead Bugs</div>
+    <button class="btn-skip-rest" onclick="skipRest()">Skip</button>
+  </div>
+
+  <!-- DETAIL VIEW -->
+  <div id="view-detail" class="view">
+    <button class="detail-back" onclick="showView('home')">← Back</button>
+    <div id="detail-content"></div>
+  </div>
+
+  <!-- COMPLETE VIEW -->
+  <div id="view-complete" class="view">
+    <div class="complete-view">
+      <div class="complete-check">✓</div>
+      <h1>Workout Done!</h1>
+      <p>3 rounds completed. Great work, Kristian.</p>
+      <div class="complete-stats stats-row">
+        <div class="stat-card">
+          <div class="num" id="c-duration">0</div>
+          <div class="label">Minutes</div>
+        </div>
+        <div class="stat-card">
+          <div class="num" id="c-sessions">0</div>
+          <div class="label">Total Sessions</div>
+        </div>
+      </div>
+      <button class="btn-home" onclick="showView('home')">Back Home</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const EXERCISES = [
+  {
+    name: "Bodyweight Squats",
+    type: "reps",
+    reps: 15,
+    repsLabel: "reps",
+    target: "15 reps · controlled tempo",
+    cue: "Push your butt back first, not knees forward. Keep chest upright and core braced. 2-3 sec down, pause at bottom, explode up.",
+    muscles: ["Erector Spinae", "Quads", "Glutes", "Core"],
+    steps: [
+      "Stand with feet shoulder-width apart, toes slightly out",
+      "Brace your core, keep chest proud and gaze forward",
+      "Push hips back first, then bend knees to lower down",
+      "Lower until thighs are parallel to floor (or as deep as comfortable)",
+      "Drive through your whole foot to stand back up",
+      "Squeeze glutes at the top and repeat"
+    ],
+    links: [
+      { source: "Men's Health", title: "Bodyweight Squat Form Guide", url: "https://www.menshealth.com/fitness/a39110810/how-to-do-bodyweight-squats/" },
+      { source: "Nerd Fitness", title: "Complete Squat Tutorial", url: "https://www.nerdfitness.com/blog/strength-training-101-how-to-squat-properly/" },
+      { source: "Healthline", title: "Proper Squat Form + 10 Variations", url: "https://www.healthline.com/health/fitness-exercise/proper-squat-form" }
+    ]
+  },
+  {
+    name: "Dead Bugs",
+    type: "reps",
+    reps: 16,
+    repsLabel: "reps (8/side)",
+    target: "8 reps per side · slow & controlled",
+    cue: "Press lower back into the floor — if it arches, reset. Extend opposite arm and leg simultaneously. 3 sec out, controlled return.",
+    muscles: ["Transverse Abdominis", "Rectus Abdominis", "Obliques", "Hip Flexors"],
+    steps: [
+      "Lie on your back, arms extended toward ceiling",
+      "Lift legs to tabletop: knees over hips, shins parallel to floor",
+      "Press your lower back firmly into the floor",
+      "Slowly extend right arm overhead while straightening left leg",
+      "Hover limbs just above the floor, hold for a beat",
+      "Return to start and repeat with opposite arm/leg",
+      "Lower back must stay in contact with floor throughout"
+    ],
+    links: [
+      { source: "Healthline", title: "Dead Bug Step-by-Step", url: "https://www.healthline.com/health/exercise-fitness/dead-bug-exercise" },
+      { source: "Men's Health", title: "Dead Bug Form & Progressions", url: "https://www.menshealth.com/uk/how-tos/a61885316/dead-bug-exercise/" },
+      { source: "Endomondo", title: "Dead Bug Video Guide", url: "https://www.endomondo.com/exercise/dead-bug" }
+    ]
+  },
+  {
+    name: "Side Plank",
+    type: "timed",
+    seconds: 25,
+    target: "20-30 sec per side",
+    cue: "Elbow directly under shoulder. Squeeze abs AND glutes. Straight line from head to heels. Don't let hips sag. Do both sides!",
+    muscles: ["External Obliques", "Internal Obliques", "Quadratus Lumborum", "Gluteus Medius"],
+    steps: [
+      "Lie on your side with forearm flat on the floor",
+      "Position elbow directly beneath your shoulder",
+      "Stack feet on top of each other (or stagger for balance)",
+      "Brace core and lift hips until body forms a straight line",
+      "Squeeze both abs and glutes to maintain position",
+      "Hold for 20-30 seconds, then switch sides",
+      "Keep forearm perpendicular to your body to protect shoulder"
+    ],
+    links: [
+      { source: "BarBend", title: "Side Plank Form Guide", url: "https://barbend.com/side-plank/" },
+      { source: "Healthline", title: "Side Plank How-to + Variations", url: "https://www.healthline.com/health/side-plank" },
+      { source: "Price Health", title: "Beginner to Advanced Video Guide", url: "https://www.pricehealth.ca/blog/side-plank/" }
+    ]
+  },
+  {
+    name: "Glute Bridges",
+    type: "reps",
+    reps: 15,
+    repsLabel: "reps",
+    target: "15 reps · 2-sec squeeze at top",
+    cue: "Drive through your heels, not toes. Squeeze glutes hard at the top for 2 seconds. Don't hyperextend — straight line from knees to shoulders.",
+    muscles: ["Gluteus Maximus", "Hamstrings", "Transverse Abdominis", "Lumbar Multifidus"],
+    steps: [
+      "Lie on your back, knees bent, feet flat and hip-width apart",
+      "Place heels about 15-20cm from your glutes",
+      "Arms at your sides, palms facing up",
+      "Squeeze glutes and abs, then drive hips toward ceiling",
+      "Rise until body is a straight line from knees to shoulders",
+      "Hold at top and squeeze glutes hard for 2 seconds",
+      "Lower slowly until glutes hover just above floor, repeat"
+    ],
+    links: [
+      { source: "NASM", title: "Official Glute Bridge Guide", url: "https://blog.nasm.org/how-to-do-a-glute-bridge" },
+      { source: "Men's Health", title: "Glute Bridge for Office Workers", url: "https://www.menshealth.com/fitness/a69384826/glute-bridge-guide/" },
+      { source: "WebMD", title: "Muscles Worked & Common Mistakes", url: "https://www.webmd.com/fitness-exercise/how-to-do-glute-bridge" }
+    ]
+  },
+  {
+    name: "Hollow Body Hold",
+    type: "timed",
+    seconds: 30,
+    target: "30 sec hold · build to 45-60 sec",
+    cue: "Press lower back into floor. Lift shoulders AND legs off the ground. Think 'banana shape'. If back arches, bend knees to make it easier.",
+    muscles: ["Rectus Abdominis", "Transverse Abdominis", "Obliques", "Hip Flexors", "Quads"],
+    steps: [
+      "Lie on your back with arms extended overhead",
+      "Tuck pelvis so lower back is pressed into the floor",
+      "Lift shoulders and arms off the ground (look at toes)",
+      "Lift straight legs a few inches off the floor",
+      "Hold 'banana shape' — entire core should be on fire",
+      "If too hard: bend knees or keep arms by your sides",
+      "Lower back must stay glued to the floor the entire time"
+    ],
+    links: [
+      { source: "Men's Health", title: "Hollow Hold Tutorial + Video", url: "https://www.menshealth.com/fitness/a26887081/hollow-hold-form/" },
+      { source: "GMB Fitness", title: "Full Tutorial with Progressions", url: "https://gmb.io/hollow-body/" },
+      { source: "Peloton", title: "Muscles Worked + Modifications", url: "https://www.onepeloton.com/blog/hollow-hold" }
+    ]
+  }
+];
+
+const REST_BETWEEN_EX = 30;
+const REST_BETWEEN_ROUNDS = 60;
+const TOTAL_ROUNDS = 3;
+
+let state = {
+  currentRound: 0,
+  currentExercise: 0,
+  timerInterval: null,
+  timerSeconds: 0,
+  isPaused: false,
+  workoutStartTime: null,
+  sessions: parseInt(localStorage.getItem('core5_sessions') || '0')
+};
+
+// Initialize home
+function initHome() {
+  const list = document.getElementById('exercise-list');
+  list.innerHTML = EXERCISES.map((ex, i) => `
+    <div class="ex-card-home" onclick="showDetail(${i})">
+      <div class="ex-num">${i + 1}</div>
+      <div class="info">
+        <div class="name">${ex.name}</div>
+        <div class="meta">${ex.type === 'timed' ? ex.target : ex.target}</div>
+      </div>
+      <div class="arrow">›</div>
+    </div>
+  `).join('');
+  document.getElementById('home-sessions').textContent = `${state.sessions} sessions`;
+}
+
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(`view-${id}`).classList.add('active');
+  document.getElementById('rest-overlay').classList.remove('active');
+}
+
+// DETAIL VIEW
+function showDetail(index) {
+  const ex = EXERCISES[index];
+  document.getElementById('detail-content').innerHTML = `
+    <div class="detail-title">${ex.name}</div>
+    <div class="detail-subtitle">${ex.target}</div>
+
+    <div class="detail-section">
+      <h3>Muscles Worked</h3>
+      <div class="muscles-grid">
+        ${ex.muscles.map(m => `<span class="muscle-tag">${m}</span>`).join('')}
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <h3>How to Do It</h3>
+      <ol>
+        ${ex.steps.map(s => `<li>${s}</li>`).join('')}
+      </ol>
+    </div>
+
+    <div class="detail-section">
+      <h3>Key Cue</h3>
+      <p>${ex.cue}</p>
+    </div>
+
+    <div class="detail-section">
+      <h3>Video & Guides</h3>
+      <div class="links-list">
+        ${ex.links.map(l => `
+          <a class="link-item" href="${l.url}" target="_blank" rel="noopener">
+            <div>
+              <div>${l.title}</div>
+              <div class="link-source">${l.source}</div>
+            </div>
+            <span class="link-arrow">↗</span>
+          </a>
+        `).join('')}
+      </div>
+    </div>
+  `;
+  showView('detail');
+}
+
+// WORKOUT
+function startWorkout() {
+  state.currentRound = 0;
+  state.currentExercise = 0;
+  state.isPaused = false;
+  state.workoutStartTime = Date.now();
+  showView('workout');
+  loadExercise();
+}
+
+function loadExercise() {
+  const ex = EXERCISES[state.currentExercise];
+  document.getElementById('w-round').textContent = `Round ${state.currentRound + 1} of ${TOTAL_ROUNDS}`;
+  document.getElementById('w-name').textContent = ex.name;
+  document.getElementById('w-target').textContent = ex.target;
+  document.getElementById('cue-text').textContent = ex.cue;
+
+  // Round dots
+  document.getElementById('round-dots').innerHTML = Array.from({length: TOTAL_ROUNDS}, (_, i) =>
+    `<div class="round-dot ${i < state.currentRound ? 'done' : ''} ${i === state.currentRound ? 'active' : ''}"></div>`
+  ).join('');
+
+  // Progress dots
+  document.getElementById('progress-dots').innerHTML = EXERCISES.map((_, i) =>
+    `<div class="progress-dot ${i < state.currentExercise ? 'done' : ''} ${i === state.currentExercise ? 'active' : ''}"></div>`
+  ).join('');
+
+  // Show timer or reps
+  if (ex.type === 'timed') {
+    document.getElementById('timer-section').style.display = 'flex';
+    document.getElementById('rep-section').style.display = 'none';
+    state.timerSeconds = ex.seconds;
+    updateTimerDisplay();
+    startTimer();
+    document.getElementById('timer-label').textContent = 'hold';
+    document.getElementById('timer-ring').className = 'timer-ring';
+
+    // For side plank, remind about both sides
+    if (ex.name === 'Side Plank') {
+      document.getElementById('w-target').textContent = ex.target + ' — LEFT side first';
+    }
+  } else {
+    document.getElementById('timer-section').style.display = 'none';
+    document.getElementById('rep-section').style.display = '';
+    document.getElementById('w-reps').textContent = ex.reps;
+    document.getElementById('w-reps-label').textContent = ex.repsLabel;
+    clearInterval(state.timerInterval);
+  }
+
+  // Update button
+  document.getElementById('btn-next').textContent = 'Done →';
+  document.getElementById('btn-next').className = 'btn-workout btn-done-ex';
+  document.getElementById('btn-pause').style.display = ex.type === 'timed' ? '' : 'none';
+}
+
+function startTimer() {
+  clearInterval(state.timerInterval);
+  state.isPaused = false;
+  document.getElementById('btn-pause').textContent = 'Pause';
+  const total = state.timerSeconds;
+  let remaining = total;
+  updateTimerRing(remaining, total);
+
+  state.timerInterval = setInterval(() => {
+    if (state.isPaused) return;
+    remaining--;
+    state.timerSeconds = remaining;
+    updateTimerDisplay();
+    updateTimerRing(remaining, total);
+
+    if (remaining <= 3 && remaining > 0) {
+      beep(300, 100);
+    }
+
+    if (remaining <= 0) {
+      clearInterval(state.timerInterval);
+      beep(600, 300);
+      document.getElementById('timer-ring').classList.add('done');
+
+      // For side plank, prompt for other side
+      const ex = EXERCISES[state.currentExercise];
+      if (ex.name === 'Side Plank' && document.getElementById('w-target').textContent.includes('LEFT')) {
+        document.getElementById('w-target').textContent = ex.target + ' — RIGHT side now!';
+        state.timerSeconds = ex.seconds;
+        setTimeout(() => {
+          document.getElementById('timer-ring').classList.remove('done');
+          startTimer();
+        }, 1500);
+        return;
+      }
+    }
+  }, 1000);
+}
+
+function togglePause() {
+  state.isPaused = !state.isPaused;
+  document.getElementById('btn-pause').textContent = state.isPaused ? 'Resume' : 'Pause';
+}
+
+function updateTimerDisplay() {
+  const m = Math.floor(state.timerSeconds / 60);
+  const s = state.timerSeconds % 60;
+  document.getElementById('timer-time').textContent =
+    m > 0 ? `${m}:${s.toString().padStart(2,'0')}` : s.toString();
+}
+
+function updateTimerRing(remaining, total) {
+  const circumference = 2 * Math.PI * 100;
+  const offset = circumference * (1 - remaining / total);
+  document.getElementById('timer-progress').style.strokeDashoffset = offset;
+}
+
+function nextExercise() {
+  clearInterval(state.timerInterval);
+
+  const isLastExercise = state.currentExercise >= EXERCISES.length - 1;
+  const isLastRound = state.currentRound >= TOTAL_ROUNDS - 1;
+
+  if (isLastExercise && isLastRound) {
+    completeWorkout();
+    return;
+  }
+
+  if (isLastExercise) {
+    // End of round — longer rest
+    state.currentExercise = 0;
+    state.currentRound++;
+    showRest(REST_BETWEEN_ROUNDS, EXERCISES[0].name, true);
+  } else {
+    // Between exercises — shorter rest
+    state.currentExercise++;
+    showRest(REST_BETWEEN_EX, EXERCISES[state.currentExercise].name, false);
+  }
+}
+
+function showRest(seconds, nextName, isRoundBreak) {
+  const overlay = document.getElementById('rest-overlay');
+  overlay.classList.add('active');
+  document.getElementById('rest-next').textContent =
+    isRoundBreak ? `Round ${state.currentRound + 1} → ${nextName}` : `Next: ${nextName}`;
+
+  let remaining = seconds;
+  document.getElementById('rest-time').textContent = remaining;
+
+  clearInterval(state.timerInterval);
+  state.timerInterval = setInterval(() => {
+    remaining--;
+    document.getElementById('rest-time').textContent = remaining;
+
+    if (remaining <= 3 && remaining > 0) beep(300, 100);
+
+    if (remaining <= 0) {
+      clearInterval(state.timerInterval);
+      beep(600, 300);
+      overlay.classList.remove('active');
+      loadExercise();
+    }
+  }, 1000);
+}
+
+function skipRest() {
+  clearInterval(state.timerInterval);
+  document.getElementById('rest-overlay').classList.remove('active');
+  loadExercise();
+}
+
+function completeWorkout() {
+  state.sessions++;
+  localStorage.setItem('core5_sessions', state.sessions);
+  const duration = Math.round((Date.now() - state.workoutStartTime) / 60000);
+  document.getElementById('c-duration').textContent = duration;
+  document.getElementById('c-sessions').textContent = state.sessions;
+  showView('complete');
+}
+
+// Audio beep
+function beep(freq, duration) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = freq;
+    gain.gain.value = 0.15;
+    osc.start();
+    osc.stop(ctx.currentTime + duration / 1000);
+  } catch(e) {}
+}
+
+// Service worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+initHome();
+</script>
+</body>
+</html>
