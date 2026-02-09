@@ -1033,7 +1033,7 @@ function showRest(seconds, nextName, isRoundBreak) {
     remaining--;
     document.getElementById('rest-time').textContent = remaining;
 
-    if (remaining <= 3 && remaining > 0) playSound('tick');
+    if (remaining <= 5 && remaining > 0) playSound('countdown');
 
     if (remaining <= 0) {
       clearInterval(state.timerInterval);
