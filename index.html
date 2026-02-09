@@ -215,6 +215,7 @@ body {
   transition:stroke-dashoffset 0.3s ease;
 }
 .timer-ring.rest .progress { stroke:var(--rest-blue); }
+.timer-ring.getting-ready .progress { stroke:#f0c040; }
 .timer-ring.done .progress { stroke:var(--green); }
 .timer-display {
   position:absolute;
@@ -871,15 +872,25 @@ function loadExercise() {
   if (ex.type === 'timed') {
     document.getElementById('timer-section').style.display = 'flex';
     document.getElementById('rep-section').style.display = 'none';
-    state.timerSeconds = ex.seconds;
-    updateTimerDisplay();
-    startTimer();
-    document.getElementById('timer-label').textContent = 'hold';
     document.getElementById('timer-ring').className = 'timer-ring';
 
-    // For side plank, remind about both sides
+    // For side plank and hollow body hold, add get-ready countdown
     if (ex.name === 'Side Plank') {
       document.getElementById('w-target').textContent = ex.target + ' — LEFT side first';
+    }
+
+    if (ex.name === 'Side Plank' || ex.name === 'Hollow Body Hold') {
+      startGetReady(() => {
+        state.timerSeconds = ex.seconds;
+        updateTimerDisplay();
+        document.getElementById('timer-label').textContent = 'hold';
+        startTimer();
+      });
+    } else {
+      state.timerSeconds = ex.seconds;
+      updateTimerDisplay();
+      document.getElementById('timer-label').textContent = 'hold';
+      startTimer();
     }
   } else {
     document.getElementById('timer-section').style.display = 'none';
@@ -893,6 +904,35 @@ function loadExercise() {
   document.getElementById('btn-next').textContent = 'Done →';
   document.getElementById('btn-next').className = 'btn-workout btn-done-ex';
   document.getElementById('btn-pause').style.display = ex.type === 'timed' ? '' : 'none';
+}
+
+function startGetReady(callback) {
+  clearInterval(state.timerInterval);
+  let countdown = 5;
+  state.timerSeconds = countdown;
+  updateTimerDisplay();
+  updateTimerRing(countdown, 5);
+  document.getElementById('timer-label').textContent = 'get ready';
+  document.getElementById('timer-ring').className = 'timer-ring getting-ready';
+  playSound('countdown');
+
+  state.timerInterval = setInterval(() => {
+    countdown--;
+    state.timerSeconds = countdown;
+    updateTimerDisplay();
+    updateTimerRing(countdown, 5);
+
+    if (countdown > 0) {
+      playSound('countdown');
+    }
+
+    if (countdown <= 0) {
+      clearInterval(state.timerInterval);
+      playSound('go');
+      document.getElementById('timer-ring').className = 'timer-ring';
+      callback();
+    }
+  }, 1000);
 }
 
 function startTimer() {
@@ -911,23 +951,27 @@ function startTimer() {
     updateTimerRing(remaining, total);
 
     if (remaining <= 3 && remaining > 0) {
-      beep(300, 100);
+      playSound('tick');
     }
 
     if (remaining <= 0) {
       clearInterval(state.timerInterval);
-      beep(600, 300);
+      playSound('done');
       document.getElementById('timer-ring').classList.add('done');
 
       // For side plank, prompt for other side
       const ex = EXERCISES[state.currentExercise];
       if (ex.name === 'Side Plank' && document.getElementById('w-target').textContent.includes('LEFT')) {
         document.getElementById('w-target').textContent = ex.target + ' — RIGHT side now!';
-        state.timerSeconds = ex.seconds;
         setTimeout(() => {
           document.getElementById('timer-ring').classList.remove('done');
-          startTimer();
-        }, 1500);
+          startGetReady(() => {
+            state.timerSeconds = ex.seconds;
+            updateTimerDisplay();
+            document.getElementById('timer-label').textContent = 'hold';
+            startTimer();
+          });
+        }, 1000);
         return;
       }
     }
@@ -989,11 +1033,11 @@ function showRest(seconds, nextName, isRoundBreak) {
     remaining--;
     document.getElementById('rest-time').textContent = remaining;
 
-    if (remaining <= 3 && remaining > 0) beep(300, 100);
+    if (remaining <= 3 && remaining > 0) playSound('tick');
 
     if (remaining <= 0) {
       clearInterval(state.timerInterval);
-      beep(600, 300);
+      playSound('go');
       overlay.classList.remove('active');
       loadExercise();
     }
@@ -1012,21 +1056,87 @@ function completeWorkout() {
   const duration = Math.round((Date.now() - state.workoutStartTime) / 60000);
   document.getElementById('c-duration').textContent = duration;
   document.getElementById('c-sessions').textContent = state.sessions;
+  playSound('complete');
   showView('complete');
 }
 
-// Audio beep
-function beep(freq, duration) {
+// Audio — single shared context, unlocked on first tap
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+// Unlock audio on first user interaction (iOS requirement)
+document.addEventListener('touchstart', () => getAudioCtx(), { once: true });
+document.addEventListener('click', () => getAudioCtx(), { once: true });
+
+function playSound(type) {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.frequency.value = freq;
-    gain.gain.value = 0.15;
-    osc.start();
-    osc.stop(ctx.currentTime + duration / 1000);
+    const ctx = getAudioCtx();
+    const t = ctx.currentTime;
+
+    if (type === 'countdown') {
+      // Short tick
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.connect(g); g.connect(ctx.destination);
+      osc.frequency.value = 880;
+      osc.type = 'sine';
+      g.gain.setValueAtTime(0.2, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+      osc.start(t); osc.stop(t + 0.1);
+    }
+    else if (type === 'go') {
+      // Rising two-tone "go!"
+      [660, 880].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.connect(g); g.connect(ctx.destination);
+        osc.frequency.value = freq;
+        osc.type = 'sine';
+        g.gain.setValueAtTime(0.25, t + i * 0.12);
+        g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.12 + 0.2);
+        osc.start(t + i * 0.12); osc.stop(t + i * 0.12 + 0.2);
+      });
+    }
+    else if (type === 'tick') {
+      // Subtle warning tick (last 3 sec)
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.connect(g); g.connect(ctx.destination);
+      osc.frequency.value = 440;
+      osc.type = 'triangle';
+      g.gain.setValueAtTime(0.18, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+      osc.start(t); osc.stop(t + 0.12);
+    }
+    else if (type === 'done') {
+      // Cheerful triple tone
+      [523, 659, 784].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.connect(g); g.connect(ctx.destination);
+        osc.frequency.value = freq;
+        osc.type = 'sine';
+        g.gain.setValueAtTime(0.2, t + i * 0.12);
+        g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.12 + 0.25);
+        osc.start(t + i * 0.12); osc.stop(t + i * 0.12 + 0.25);
+      });
+    }
+    else if (type === 'complete') {
+      // Workout complete fanfare
+      [523, 659, 784, 1047].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.connect(g); g.connect(ctx.destination);
+        osc.frequency.value = freq;
+        osc.type = 'sine';
+        g.gain.setValueAtTime(0.22, t + i * 0.15);
+        g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.15 + 0.35);
+        osc.start(t + i * 0.15); osc.stop(t + i * 0.15 + 0.35);
+      });
+    }
   } catch(e) {}
 }
 

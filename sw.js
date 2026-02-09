@@ -1,4 +1,4 @@
-const CACHE_NAME = 'core5-v1';
+const CACHE_NAME = 'core5-v2';
 const ASSETS = [
   './',
   './index.html',
