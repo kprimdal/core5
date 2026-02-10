@@ -772,7 +772,8 @@ let state = {
   timerSeconds: 0,
   isPaused: false,
   workoutStartTime: null,
-  sessions: parseInt(localStorage.getItem('core5_sessions') || '0')
+  sessions: parseInt(localStorage.getItem('core5_sessions') || '0'),
+  wakeLock: null
 };
 
 // Initialize home
@@ -795,6 +796,11 @@ function showView(id) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById(`view-${id}`).classList.add('active');
   document.getElementById('rest-overlay').classList.remove('active');
+
+  // Release wake lock when leaving workout view
+  if (id !== 'workout') {
+    releaseWakeLock();
+  }
 }
 
 // DETAIL VIEW
@@ -841,12 +847,46 @@ function showDetail(index) {
   showView('detail');
 }
 
+// WAKE LOCK
+async function requestWakeLock() {
+  try {
+    if ('wakeLock' in navigator) {
+      state.wakeLock = await navigator.wakeLock.request('screen');
+      console.log('Wake Lock activated');
+
+      // Handle wake lock release (e.g., when tab becomes hidden)
+      state.wakeLock.addEventListener('release', () => {
+        console.log('Wake Lock released');
+      });
+    }
+  } catch (err) {
+    console.error('Wake Lock error:', err);
+  }
+}
+
+function releaseWakeLock() {
+  if (state.wakeLock) {
+    state.wakeLock.release().then(() => {
+      state.wakeLock = null;
+      console.log('Wake Lock manually released');
+    });
+  }
+}
+
+// Re-acquire wake lock when page becomes visible again
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState === 'visible' && document.getElementById('view-workout').classList.contains('active')) {
+    await requestWakeLock();
+  }
+});
+
 // WORKOUT
 function startWorkout() {
   state.currentRound = 0;
   state.currentExercise = 0;
   state.isPaused = false;
   state.workoutStartTime = Date.now();
+  requestWakeLock();
   showView('workout');
   loadExercise();
 }
