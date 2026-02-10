@@ -1021,7 +1021,10 @@ function startTimer() {
   }, 1000);
 }
 
-function togglePause() {
+async function togglePause() {
+  // Ensure audio stays unlocked
+  await unlockAudio();
+
   state.isPaused = !state.isPaused;
   document.getElementById('btn-pause').textContent = state.isPaused ? 'Resume' : 'Pause';
 }
@@ -1039,7 +1042,10 @@ function updateTimerRing(remaining, total) {
   document.getElementById('timer-progress').style.strokeDashoffset = offset;
 }
 
-function nextExercise() {
+async function nextExercise() {
+  // Ensure audio stays unlocked on every interaction
+  await unlockAudio();
+
   clearInterval(state.timerInterval);
 
   const isLastExercise = state.currentExercise >= EXERCISES.length - 1;
@@ -1087,7 +1093,10 @@ function showRest(seconds, nextName, isRoundBreak) {
   }, 1000);
 }
 
-function skipRest() {
+async function skipRest() {
+  // Ensure audio stays unlocked
+  await unlockAudio();
+
   clearInterval(state.timerInterval);
   document.getElementById('rest-overlay').classList.remove('active');
   loadExercise();
@@ -1115,24 +1124,40 @@ function getAudioCtx() {
 }
 
 async function unlockAudio() {
-  if (audioUnlocked) return;
-
   const ctx = getAudioCtx();
+
+  // Always try to resume if suspended
   if (ctx.state === 'suspended') {
-    await ctx.resume();
+    try {
+      await ctx.resume();
+      console.log('Audio context resumed, state:', ctx.state);
+    } catch (e) {
+      console.error('Failed to resume audio context:', e);
+    }
   }
 
-  // Play a silent sound to truly unlock audio on iOS
-  const osc = ctx.createOscillator();
-  const g = ctx.createGain();
-  g.gain.value = 0.001;
-  osc.connect(g);
-  g.connect(ctx.destination);
-  osc.start(ctx.currentTime);
-  osc.stop(ctx.currentTime + 0.01);
+  // Play a very short audible beep to unlock audio (iOS standalone mode requirement)
+  // Only play this beep once on first unlock
+  if (!audioUnlocked) {
+    try {
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.connect(g);
+      g.connect(ctx.destination);
+      osc.frequency.value = 880;
+      osc.type = 'sine';
+      // Very short, audible beep
+      g.gain.setValueAtTime(0.3, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.05);
 
-  audioUnlocked = true;
-  console.log('Audio unlocked, state:', ctx.state);
+      audioUnlocked = true;
+      console.log('Audio unlocked with test beep');
+    } catch (e) {
+      console.error('Failed to unlock audio:', e);
+    }
+  }
 }
 
 // Unlock audio on first user interaction (iOS requirement)
