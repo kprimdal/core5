@@ -659,7 +659,7 @@ body {
 </div>
 
 <script>
-const APP_VERSION = 'v1.5.1';
+const APP_VERSION = 'v1.6.0';
 
 const EXERCISES = [
   {
@@ -1118,49 +1118,37 @@ function completeWorkout() {
   showView('complete');
 }
 
-// HTML5 Audio approach for iOS standalone PWA compatibility
+// HTML5 Audio with hosted WAV files - works in iOS standalone!
 let audioUnlocked = false;
-const audioCache = {};
+const audioFiles = {
+  countdown: new Audio('countdown.wav'),
+  go: new Audio('go.wav'),
+  tick: new Audio('tick.wav'),
+  done: new Audio('done.wav'),
+  complete: new Audio('complete.wav')
+};
 
-// Simpler approach: use Web Audio API but make it work in standalone
-let audioCtx = null;
-let audioUnlocked = false;
-
-function getAudioContext() {
-  if (!audioCtx) {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  }
-  return audioCtx;
-}
-
-// Create immediately
-getAudioContext();
+// Preload all audio files
+Object.values(audioFiles).forEach(audio => {
+  audio.preload = 'auto';
+  audio.volume = 0.7;
+});
 
 function unlockAudio() {
-  const ctx = getAudioContext();
+  if (audioUnlocked) return;
 
-  if (ctx.state === 'suspended') {
-    ctx.resume();
-  }
-
-  // Play a test beep to unlock
-  if (!audioUnlocked) {
-    try {
-      const osc = ctx.createOscillator();
-      const g = ctx.createGain();
-      osc.connect(g);
-      g.connect(ctx.destination);
-      osc.frequency.value = 880;
-      g.gain.setValueAtTime(0.5, ctx.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + 0.1);
-      audioUnlocked = true;
-      console.log('🔔 Audio unlocked!');
-    } catch(e) {
-      console.error('❌ Unlock failed:', e);
-    }
-  }
+  // Play a silent audio to unlock iOS audio
+  const audio = audioFiles.countdown;
+  audio.volume = 0.01;
+  audio.play().then(() => {
+    audio.pause();
+    audio.currentTime = 0;
+    audio.volume = 0.7;
+    audioUnlocked = true;
+    console.log('🔔 Audio unlocked!');
+  }).catch(e => {
+    console.error('❌ Unlock failed:', e);
+  });
 }
 
 // Unlock on first touch/click
@@ -1168,68 +1156,17 @@ document.addEventListener('touchstart', unlockAudio, { once: true });
 document.addEventListener('click', unlockAudio, { once: true });
 
 function playSound(type) {
+  if (!audioFiles[type]) {
+    console.warn('⚠️ Sound not found:', type);
+    return;
+  }
+
   try {
-    const ctx = getAudioContext();
-
-    // Always try to resume
-    if (ctx.state === 'suspended') {
-      ctx.resume();
-    }
-
-    const t = ctx.currentTime;
-
-    if (type === 'countdown') {
-      const osc = ctx.createOscillator();
-      const g = ctx.createGain();
-      osc.connect(g); g.connect(ctx.destination);
-      osc.frequency.value = 880;
-      g.gain.setValueAtTime(0.5, t);
-      g.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
-      osc.start(t); osc.stop(t + 0.1);
-    }
-    else if (type === 'go') {
-      [660, 880].forEach((freq, i) => {
-        const osc = ctx.createOscillator();
-        const g = ctx.createGain();
-        osc.connect(g); g.connect(ctx.destination);
-        osc.frequency.value = freq;
-        g.gain.setValueAtTime(0.5, t + i * 0.12);
-        g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.12 + 0.2);
-        osc.start(t + i * 0.12); osc.stop(t + i * 0.12 + 0.2);
-      });
-    }
-    else if (type === 'tick') {
-      const osc = ctx.createOscillator();
-      const g = ctx.createGain();
-      osc.connect(g); g.connect(ctx.destination);
-      osc.frequency.value = 440;
-      osc.type = 'triangle';
-      g.gain.setValueAtTime(0.4, t);
-      g.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
-      osc.start(t); osc.stop(t + 0.12);
-    }
-    else if (type === 'done') {
-      [523, 659, 784].forEach((freq, i) => {
-        const osc = ctx.createOscillator();
-        const g = ctx.createGain();
-        osc.connect(g); g.connect(ctx.destination);
-        osc.frequency.value = freq;
-        g.gain.setValueAtTime(0.5, t + i * 0.12);
-        g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.12 + 0.25);
-        osc.start(t + i * 0.12); osc.stop(t + i * 0.12 + 0.25);
-      });
-    }
-    else if (type === 'complete') {
-      [523, 659, 784, 1047].forEach((freq, i) => {
-        const osc = ctx.createOscillator();
-        const g = ctx.createGain();
-        osc.connect(g); g.connect(ctx.destination);
-        osc.frequency.value = freq;
-        g.gain.setValueAtTime(0.5, t + i * 0.15);
-        g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.15 + 0.35);
-        osc.start(t + i * 0.15); osc.stop(t + i * 0.15 + 0.35);
-      });
-    }
+    const audio = audioFiles[type];
+    audio.currentTime = 0; // Reset to start
+    audio.play().catch(e => {
+      console.error('❌ Failed to play:', type, e);
+    });
   } catch(e) {
     console.error('❌ Sound error:', e);
   }
