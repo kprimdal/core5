@@ -523,6 +523,20 @@ body {
   cursor:pointer;
 }
 
+/* Version footer */
+.version {
+  position:fixed;
+  bottom:8px;
+  left:50%;
+  transform:translateX(-50%);
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px;
+  color:var(--text-dim);
+  opacity:0.4;
+  z-index:1000;
+  pointer-events:none;
+}
+
 /* Animations */
 @keyframes fadeIn {
   from { opacity:0; transform:translateY(8px); }
@@ -643,9 +657,14 @@ body {
     </div>
   </div>
 
+  <!-- Version footer -->
+  <div class="version" id="version"></div>
+
 </div>
 
 <script>
+const APP_VERSION = 'v1.4.0';
+
 const EXERCISES = [
   {
     name: "Bodyweight Squats",
@@ -1245,6 +1264,9 @@ async function playSound(type) {
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
+
+// Display version
+document.getElementById('version').textContent = APP_VERSION;
 
 initHome();
 </script>
