@@ -659,7 +659,7 @@ body {
 </div>
 
 <script>
-const APP_VERSION = 'v1.4.1';
+const APP_VERSION = 'v1.4.2';
 
 const EXERCISES = [
   {
@@ -897,6 +897,8 @@ document.addEventListener('visibilitychange', async () => {
 
 // WORKOUT
 function startWorkout() {
+  console.log('🏋️ startWorkout called');
+
   // Explicitly unlock audio when starting workout (must be synchronous for iOS)
   unlockAudio();
 
@@ -1144,36 +1146,47 @@ getAudioCtx();
 
 function unlockAudio() {
   const ctx = getAudioCtx();
-  console.log('unlockAudio called, current state:', ctx.state, 'unlocked:', audioUnlocked);
+  console.log('🔊 unlockAudio called, current state:', ctx.state, 'unlocked:', audioUnlocked);
 
-  // Always try to resume if suspended (synchronously, not async)
+  // Show visual feedback
+  const startBtn = document.querySelector('.btn-start');
+  if (startBtn) {
+    startBtn.style.opacity = '0.5';
+    setTimeout(() => { startBtn.style.opacity = '1'; }, 200);
+  }
+
+  // Always try to resume if suspended
   if (ctx.state === 'suspended') {
+    console.log('⏸️ Context suspended, attempting resume...');
     ctx.resume().then(() => {
-      console.log('Audio context resumed, new state:', ctx.state);
+      console.log('▶️ Audio context resumed, new state:', ctx.state);
     }).catch(e => {
-      console.error('Failed to resume audio context:', e);
+      console.error('❌ Failed to resume audio context:', e);
     });
   }
 
-  // Play a test beep EVERY time (not just once) to ensure unlock
-  try {
-    const osc = ctx.createOscillator();
-    const g = ctx.createGain();
-    osc.connect(g);
-    g.connect(ctx.destination);
-    osc.frequency.value = 880;
-    osc.type = 'sine';
-    // Audible beep
-    g.gain.setValueAtTime(0.4, ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.08);
+  // Wait a tiny bit for resume, then play obvious test beep
+  setTimeout(() => {
+    try {
+      const t = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.connect(g);
+      g.connect(ctx.destination);
+      osc.frequency.value = 880;
+      osc.type = 'sine';
+      // LOUD and LONG beep so you can't miss it
+      g.gain.setValueAtTime(0.5, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+      osc.start(t);
+      osc.stop(t + 0.2);
 
-    audioUnlocked = true;
-    console.log('Test beep played, audio should be unlocked');
-  } catch (e) {
-    console.error('Failed to play test beep:', e);
-  }
+      audioUnlocked = true;
+      console.log('🔔 Test beep played! If you heard it, audio is working.');
+    } catch (e) {
+      console.error('❌ Failed to play test beep:', e);
+    }
+  }, 50);
 
   return ctx;
 }
